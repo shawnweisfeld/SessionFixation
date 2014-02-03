@@ -74,6 +74,12 @@ namespace SessionFixation
                 response.Redirect("~/");
             }
         }
+
+        public static void SignOut()
+        {
+            HttpContext.Current.Session.Clear();
+            HttpContext.Current.GetOwinContext().Authentication.SignOut();
+        }
     }
     #endregion
 }

@@ -42,18 +42,25 @@ namespace SessionFixation
         void Application_PreRequestHandlerExecute(Object sender, EventArgs e)
         {
             if (Context.Session != null 
-                && Context.Session["SessionOwner"] != null 
                 && Context.User.Identity.IsAuthenticated)
             {
-                var authUserID = ((ClaimsIdentity)Context.User.Identity).GetUserId();
-                var sessionUserID = Context.Session["SessionOwner"].ToString();
-
-                if (sessionUserID != authUserID)
+                if (Context.Session["SessionOwner"] == null)
                 {
-                    Context.GetOwinContext().Authentication.SignOut();
-                    Response.Redirect("/", true);
+                    IdentityHelper.SignOut();
+                }
+                else
+                {
+                    var authUserID = ((ClaimsIdentity)Context.User.Identity).GetUserId();
+                    var sessionUserID = Context.Session["SessionOwner"].ToString();
+
+                    if (sessionUserID != authUserID)
+                    {
+                        IdentityHelper.SignOut();
+                    }
                 }
             }
         }
+
+
     }
 }

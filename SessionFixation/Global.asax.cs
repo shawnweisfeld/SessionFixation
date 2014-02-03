@@ -20,32 +20,40 @@ namespace SessionFixation
             BundleConfig.RegisterBundles(BundleTable.Bundles);
         }
 
+        // Consider forcing the entire website to only accept HTTPS
+        // see: http://tools.ietf.org/html/rfc6797
+        // 
+        // This can be done in the web.config with the following XML
+        //<system.webServer> 
+        //  <httpProtocol> 
+        //      <customHeaders> 
+        //          <add name="Strict-Transport-Security" value="max-age=10886400"/> 
+        //      </customHeaders> 
+        //< /httpProtocol> 
+        //</system.webServer>
+
+        // Consider only allowing cookies when the user is using SSL
+        // <httpCookies httpOnlyCookies="true" requireSSL="true" domain="" />
+        //
+        // for more information:
+        // http://msdn.microsoft.com/en-us/library/ms228262(v=vs.85).aspx
+
+
         void Application_PreRequestHandlerExecute(Object sender, EventArgs e)
         {
-            if (Context.Handler is IRequiresSessionState || Context.Handler is IReadOnlySessionState)
+            if (Context.Session != null 
+                && Context.Session["SessionOwner"] != null 
+                && Context.User.Identity.IsAuthenticated)
             {
-                if (Context.User.Identity.IsAuthenticated)
-                {
-                    if (Session["SessionOwner"] == null)
-                    {
-                        Context.GetOwinContext().Authentication.SignOut();
-                        Response.Redirect("/");
-                    }
-                    else
-                    {
-                        var sessionUserID = Session["SessionOwner"].ToString();
-                        var authUserID = ((ClaimsIdentity)Context.User.Identity).GetUserId();
+                var authUserID = ((ClaimsIdentity)Context.User.Identity).GetUserId();
+                var sessionUserID = Context.Session["SessionOwner"].ToString();
 
-                        if (sessionUserID != authUserID)
-                        {
-                            Context.Session.Clear();
-                            Context.Session.Abandon();
-                            throw new Exception("You are an evil doer! No soup for you!");
-                        }
-                    }
+                if (sessionUserID != authUserID)
+                {
+                    Context.GetOwinContext().Authentication.SignOut();
+                    Response.Redirect("/", true);
                 }
             }
         }
-
     }
 }

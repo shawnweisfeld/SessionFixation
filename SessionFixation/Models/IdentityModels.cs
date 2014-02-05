@@ -43,7 +43,10 @@ namespace SessionFixation
             authenticationManager.SignOut(DefaultAuthenticationTypes.ExternalCookie);
             var identity = manager.CreateIdentity(user, DefaultAuthenticationTypes.ApplicationCookie);
             authenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, identity);
-
+            
+            //clear the session when a user logs in
+            HttpContext.Current.Session.Clear();
+            //Mark the user as the owner of the session to prevent unauthorized access
             HttpContext.Current.Session["SessionOwner"] = identity.GetUserId();
         }
 
@@ -77,8 +80,10 @@ namespace SessionFixation
 
         public static void SignOut()
         {
+            //Clear the session when a user signs out
             HttpContext.Current.Session.Clear();
             HttpContext.Current.GetOwinContext().Authentication.SignOut();
+            HttpContext.Current.Response.Redirect("/", true);
         }
     }
     #endregion

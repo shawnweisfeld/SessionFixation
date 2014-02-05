@@ -41,26 +41,37 @@ namespace SessionFixation
 
         void Application_PreRequestHandlerExecute(Object sender, EventArgs e)
         {
-            if (Context.Session != null 
-                && Context.User.Identity.IsAuthenticated)
+            //is this a request that has session?
+            if (Context.Session != null)
             {
-                if (Context.Session["SessionOwner"] == null)
+                //is this an authenticated request?
+                if (Context.User.Identity.IsAuthenticated)
                 {
-                    IdentityHelper.SignOut();
+                    if (Context.Session["SessionOwner"] == null)
+                    {
+                        //if the session owner is missing from the session 
+                        //require the user to log back in
+                        IdentityHelper.SignOut();
+                    }
+                    else
+                    {
+                        var authUserID = ((ClaimsIdentity)Context.User.Identity).GetUserId();
+                        var sessionUserID = Context.Session["SessionOwner"].ToString();
+
+                        if (sessionUserID != authUserID)
+                        {
+                            //if the session owner is not the person that is logged in
+                            //require the user to log back in
+                            IdentityHelper.SignOut();
+                        }
+                    }
                 }
                 else
                 {
-                    var authUserID = ((ClaimsIdentity)Context.User.Identity).GetUserId();
-                    var sessionUserID = Context.Session["SessionOwner"].ToString();
-
-                    if (sessionUserID != authUserID)
-                    {
-                        IdentityHelper.SignOut();
-                    }
+                    //Don't store anything in the session for unauthenticated users
+                    Context.Session.Clear();
                 }
             }
         }
-
-
     }
 }
